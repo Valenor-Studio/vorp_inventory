@@ -153,11 +153,6 @@ INV.getItemCount = function(source, item, metadata)
     return VInv:GetItemCount(source, item)
 end
 
-INV.getDBItem = function(target, itemName)
-    local defs = VInv:GetItemDefinitions()
-    return defs and defs[itemName]
-end
-
 INV.canCarryItems = function(source, amount)
     return true 
 end
@@ -182,6 +177,10 @@ INV.OpenInv = function(source, invId)
 end
 
 INV.isCustomInventoryRegistered = function()
+end
+INV.getItemDB = function(name)
+    local defs = VInv:GetItemDefinitions()
+    return defs and defs[itemName]
 end
 
 -- Export the API object
@@ -215,6 +214,7 @@ exports("getUserWeapons", INV.getUserWeapons)
 exports("getUserWeapon", INV.getUserWeapon)
 exports("removeAllUserAmmo", INV.removeAllUserAmmo)
 exports("getItem", INV.getItem)
+exports("getItemDB", INV.getItemDB)
 exports("getItemByMainId", INV.getItemByMainId)
 exports("addItem", INV.addItem)
 exports("subItem", INV.subItem)
@@ -224,7 +224,6 @@ exports("getItemByName", INV.getItemByName)
 exports("getItemContainingMetadata", INV.getItemContainingMetadata)
 exports("getItemMatchingMetadata", INV.getItemMatchingMetadata)
 exports("getItemCount", INV.getItemCount)
-exports("getDBItem", INV.getDBItem)
 exports("canCarryItems", INV.canCarryItems)
 exports("canCarryItem", INV.canCarryItem)
 exports("RegisterUsableItem", INV.RegisterUsableItem)
