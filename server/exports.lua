@@ -158,11 +158,11 @@ INV.canCarryItems = function(source, amount)
 end
 
 INV.canCarryItem = function(source, item, amount)
-    return VInv:CanCarryItem(source, item, amount)
+    return VInv:canCarryItem(source, item, amount)
 end
 
 INV.RegisterUsableItem = function(itemName, cb)
-    VInv:RegisterUsableItem(itemName, cb)
+    VInv:registerUsableItem(itemName, cb)
 end
 
 INV.getUserInventory = function(source)
@@ -180,7 +180,7 @@ INV.isCustomInventoryRegistered = function()
 end
 INV.getItemDB = function(name)
     local defs = VInv:GetItemDefinitions()
-    return defs and defs[itemName]
+    return defs and defs[name]
 end
 
 -- Export the API object
@@ -231,3 +231,4 @@ exports("registerUsableItem", INV.RegisterUsableItem)
 exports("getUserInventory", INV.getUserInventory)
 exports("CloseInv", INV.CloseInv)
 exports("OpenInv", INV.OpenInv)
+exports("closeInventory", INV.CloseInv)
