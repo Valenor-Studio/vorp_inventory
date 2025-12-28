@@ -181,6 +181,9 @@ end
 INV.OpenInv = function(source, invId)
 end
 
+INV.isCustomInventoryRegistered = function()
+end
+
 -- Export the API object
 exports('vorp_inventoryApi', function()
     return INV
@@ -189,6 +192,7 @@ end)
 -- Direct exports for individual functions
 -- NOTE: Some of these may override bridge_server.lua exports depending on load order and name collisions.
 -- However, since vorp_compat.lua is loaded LAST, these will take precedence if names match.
+exports("isCustomInventoryRegistered", INV.isCustomInventoryRegistered)
 exports("registerInventory", INV.registerInventory)
 exports("removeInventory", INV.removeInventory)
 exports("BlackListCustomAny", INV.BlackListCustomAny)
@@ -224,6 +228,7 @@ exports("getDBItem", INV.getDBItem)
 exports("canCarryItems", INV.canCarryItems)
 exports("canCarryItem", INV.canCarryItem)
 exports("RegisterUsableItem", INV.RegisterUsableItem)
+exports("registerUsableItem", INV.RegisterUsableItem)
 exports("getUserInventory", INV.getUserInventory)
 exports("CloseInv", INV.CloseInv)
 exports("OpenInv", INV.OpenInv)
