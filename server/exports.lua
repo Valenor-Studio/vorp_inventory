@@ -39,7 +39,7 @@ INV.deletegun = function(source, id)
 end
 
 INV.canCarryWeapons = function(source, amount, cb, weaponName)
-    local can = VInv:CanCarryItem(source, weaponName, amount)
+    local can = VInv:canCarryItem(source, weaponName, amount)
     if cb then cb(can) end
     return can
 end
