@@ -12,6 +12,12 @@ INV.setInventoryItemLimit = function(...) end
 INV.setInventoryWeaponLimit = function(...) end
 INV.updateCustomInventorySlots = function(...) end
 
+local function respond(cb, result, message)
+	if message then print(message) end
+	if cb then cb(result) end
+	return result
+end
+
 -- * WEAPONS * --
 INV.subWeapon = function(source, weaponid)
     if type(weaponid) == "number" then
@@ -72,6 +78,18 @@ INV.giveWeapon = function(source, weaponid, target)
             VInv:AddItem(target, item.name, 1, item.metadata)
         end
     end
+end
+
+INV.getUserInventoryItems = function(source, cb)
+    local items = VInv:GetInventory(source)
+    for k, v in pairs(items) do
+        items[k].count = v.amount
+    end
+    return respond(cb, items)
+end
+
+INV.getUserInventoryWeapons = function(source, cb)
+    return respond(cb, VInv:getUserInventoryWeapons(source))
 end
 
 INV.addBullets = function(source, weaponId, type, qty)
@@ -201,6 +219,8 @@ exports("setInventoryItemLimit", INV.setInventoryItemLimit)
 exports("setInventoryWeaponLimit", INV.setInventoryWeaponLimit)
 exports("updateCustomInventorySlots", INV.updateCustomInventorySlots)
 exports("subWeapon", INV.subWeapon)
+exports("getUserInventoryItems", INV.getUserInventoryItems)
+exports("getUserInventoryWeapons", INV.getUserInventoryWeapons)
 exports("createWeapon", INV.createWeapon)
 exports("deletegun", INV.deletegun)
 exports("canCarryWeapons", INV.canCarryWeapons)
