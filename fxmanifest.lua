@@ -5,7 +5,7 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 game 'rdr3'
 author 'VORP'
 name 'vorp inventory for v-inventory export functions'
-description 'Inventory System for RedM VORPCore framework'
+description 'VORP Inventory helper for v-inventory'
 
 lua54 'yes'
 
