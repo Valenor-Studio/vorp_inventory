@@ -126,7 +126,9 @@ INV.removeAllUserAmmo = function(source) end
 
 -- * ITEMS * --
 INV.getItem = function(source, itemName, metadata)
-    return VInv:getItemMatchingMetadata(source, itemName, metadata)
+    local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
+    item.count = tonumber(item.amount)
+    return item
 end
 
 INV.getItemByMainId = function(source, mainid) 
