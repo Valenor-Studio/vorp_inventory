@@ -150,7 +150,7 @@ INV.getItemMatchingMetadata = function(source, itemName, metadata)
 end
 
 INV.getItemCount = function(source, item, metadata)
-    return VInv:GetItemCount(source, item)
+    return VInv:getItemCount(source, item)
 end
 
 INV.canCarryItems = function(source, amount)
