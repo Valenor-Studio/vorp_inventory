@@ -20,11 +20,7 @@ end
 
 -- * WEAPONS * --
 INV.subWeapon = function(source, weaponid)
-    if type(weaponid) == "number" then
-         VInv:RemoveItem(source, nil, 1, nil, nil, weaponid)
-    else
-         VInv:RemoveItem(source, weaponid, 1)
-    end
+    VInv:subWeapon(source, weaponid)
 end
 
 INV.createWeapon = function(source, weaponName, ammoaux, compaux, comps, custom_serial, custom_label, custom_desc)
