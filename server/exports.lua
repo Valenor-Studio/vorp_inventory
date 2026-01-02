@@ -204,6 +204,67 @@ exports('vorp_inventoryApi', function()
     return INV
 end)
 
+exports('isCustomInventoryRegistered', function(id, cb)
+    return exports["v-inventory"]:isCustomInventoryRegistered(id, cb)
+end)
+
+exports('getCustomInventoryData', function(id, cb)
+    return exports["v-inventory"]:getCustomInventoryData(id, cb)
+end)
+
+exports('updateCustomInvData', function(data, cb)
+    return exports["v-inventory"]:updateCustomInvData(data, cb)
+end)
+
+exports('openPlayerInventory', function(data)
+    return exports["v-inventory"]:openPlayerInventory(data)
+end)
+
+exports('addItemsToCustomInventory', function(invId, items, charId, cb)
+    return exports["v-inventory"]:addItemsToCustomInventory(invId, items, charId, cb)
+end)
+
+exports('addWeaponsToCustomInventory', function(invId, weapons, charId, cb)
+    return exports["v-inventory"]:addWeaponsToCustomInventory(invId, weapons, charId, cb)
+end)
+
+exports('getCustomInventoryItemCount', function(invId, itemName, itemCraftedId, cb)
+    return exports["v-inventory"]:getCustomInventoryItemCount(invId, itemName, itemCraftedId, cb)
+end)
+
+exports('getCustomInventoryWeaponCount', function(invId, weaponName, cb)
+    return exports["v-inventory"]:getCustomInventoryWeaponCount(invId, weaponName, cb)
+end)
+
+exports('removeItemFromCustomInventory', function(invId, itemName, amount, itemCraftedId, cb)
+    return exports["v-inventory"]:removeItemFromCustomInventory(invId, itemName, amount, itemCraftedId, cb)
+end)
+
+exports('getCustomInventoryItems', function(invId, cb)
+    return exports["v-inventory"]:getCustomInventoryItems(invId, cb)
+end)
+
+exports('getCustomInventoryWeapons', function(invId, cb)
+    return exports["v-inventory"]:getCustomInventoryWeapons(invId, cb)
+end)
+
+exports('updateCustomInventoryItem', function(invId, item_id, metadata, amount, cb)
+    return exports["v-inventory"]:updateCustomInventoryItem(invId, item_id, metadata, amount, cb)
+end)
+
+exports('removeCustomInventoryWeaponById', function(invId, weapon_id, cb)
+    return exports["v-inventory"]:removeCustomInventoryWeaponById(invId, weapon_id, cb)
+end)
+
+exports('removeWeaponFromCustomInventory', function(invId, weaponName, cb)
+    return exports["v-inventory"]:removeWeaponFromCustomInventory(invId, weaponName, cb)
+end)
+
+exports('deleteCustomInventory', function(invId, cb)
+    return exports["v-inventory"]:deleteCustomInventory(invId, cb)
+end)
+
+
 -- Direct exports for individual functions
 -- NOTE: Some of these may override bridge_server.lua exports depending on load order and name collisions.
 -- However, since vorp_compat.lua is loaded LAST, these will take precedence if names match.
