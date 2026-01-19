@@ -9,6 +9,11 @@ description 'VORP Inventory helper for v-inventory'
 
 lua54 'yes'
 
+shared_scripts {
+  'config/ammo.lua',
+  'config/weapons.lua',
+}
+
 client_scripts {
   'client/exports.lua',
 }
