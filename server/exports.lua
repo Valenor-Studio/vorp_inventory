@@ -1,23 +1,6 @@
 local VInv = exports["v-inventory"]
 local INV = {}
 
--- Helper to safely call VInv
-local function SafeCall(fnName, ...)
-    if VInv and VInv[fnName] then
-        return VInv[fnName](VInv, ...)
-    else
-        print("^1[vorp_compat] ERROR: v-inventory export '"..tostring(fnName).."' not found.^7")
-        return nil
-    end
-end
-
--- Helper alias for respond
-local function respond(cb, result, message)
-	if message then print(message) end
-	if cb then cb(result) end
-	return result
-end
-
 INV.registerInventory = function(...)
      print("^3[v-inventory] Ignored registerInventory (legacy compatibility)^7")
 end
@@ -29,13 +12,15 @@ INV.setInventoryItemLimit = function(...) end
 INV.setInventoryWeaponLimit = function(...) end
 INV.updateCustomInventorySlots = function(...) end
 
+local function respond(cb, result, message)
+	if message then print(message) end
+	if cb then cb(result) end
+	return result
+end
+
 -- * WEAPONS * --
-INV.subWeapon = function(source, weaponid)
-    if type(weaponid) == "number" then
-        VInv:RemoveItem(source, nil, 1, nil, nil, weaponid)
-    else
-         -- If it's a serial strings, finding slot is hard without extra query
-    end
+INV.subWeapon = function(source, weaponid, cb)
+    return respond(cb, VInv:subWeapon(source, weaponid))
 end
 
 INV.createWeapon = function(source, weaponName, ammoaux, compaux, comps, custom_serial, custom_label, custom_desc)
@@ -44,11 +29,10 @@ INV.createWeapon = function(source, weaponName, ammoaux, compaux, comps, custom_
         components = comps or {},
         serial = custom_serial,
         label = custom_label,
-        desc = custom_desc or "",
-        description = custom_desc -- V-Inv uses description often
+        desc = custom_desc
     }
-    VInv:AddItem(source, weaponName, 1, meta)
-    return true
+    
+    return VInv:AddItem(source, weaponName, 1, meta)
 end
 
 INV.deletegun = function(source, id)
@@ -57,24 +41,26 @@ INV.deletegun = function(source, id)
 end
 
 INV.canCarryWeapons = function(source, amount, cb, weaponName)
-    local can = VInv:canCarryItem(source, weaponName or "weapon", amount)
-    return respond(cb, can)
+    local can = VInv:canCarryItem(source, weaponName, amount)
+    return respond(cb, can) 
 end
 
 INV.getcomps = function(source, weaponid)
     return {}
 end
 
-INV.giveWeapon = function(source, weaponid, target)
+INV.giveWeapon = function(source, weaponid, target, cb)
     local item = nil
-    local items = VInv:GetInventory(source)
-    
-    if items then
-         if type(weaponid) == "number" then
+    if type(weaponid) == "number" then
+         local items = VInv:GetInventory(source)
+         if items then
              for _, v in ipairs(items) do
                  if v.slot == weaponid then item = v break end
              end
-         else
+         end
+    else
+         local items = VInv:GetInventory(source)
+         if items then
              for _, v in ipairs(items) do
                  if v.name == weaponid then item = v break end
              end
@@ -84,222 +70,128 @@ INV.giveWeapon = function(source, weaponid, target)
     if item then
         local success = VInv:RemoveItem(source, item.name, 1, nil, nil, item.slot)
         if success then
-            VInv:AddItem(target, item.name, 1, item.metadata)
+           return respond(cb, VInv:AddItem(target, item.name, 1, item.metadata)) 
         end
     end
-end
-
--- Mapped to match VORP Item Structure
-local function mapToVorpItem(vItem)
-    if not vItem then return nil end
-    return {
-        id = vItem.slot, -- VORP uses 'id' often as slot or DB ID. Slot is safest for session.
-        label = vItem.label or vItem.name,
-        name = vItem.name,
-        desc = (vItem.metadata and vItem.metadata.description) or "",
-        metadata = vItem.metadata or {},
-        type = vItem.type or "item",
-        count = vItem.amount or 0,
-        limit = vItem.limit or 100,
-        canUse = true, -- simplified
-        group = vItem.group or "item", -- simplified
-        weight = vItem.weight or 0.0,
-        percentage = 100 -- simplified
-    }
+    return respond(cb, nil)
 end
 
 INV.getUserInventoryItems = function(source, cb)
-    local items = VInv:GetInventory(source) or {}
-    local vorpItems = {}
-    for _, v in ipairs(items) do
-        table.insert(vorpItems, mapToVorpItem(v))
+    local items = VInv:GetInventory(source)
+    for k, v in pairs(items) do
+        items[k].count = v.amount
     end
-    return respond(cb, vorpItems)
+    return respond(cb, items)
 end
 
 INV.getUserInventoryWeapons = function(source, cb)
-    local items = VInv:GetInventory(source) or {}
-    local weapons = {}
-    for _, v in ipairs(items) do
-         if v.type == "item_weapon" or (v.name and string.find(string.upper(v.name), "WEAPON_")) then
-             table.insert(weapons, mapToVorpItem(v))
-         end
-    end
-    return respond(cb, weapons)
+    return respond(cb, VInv:getUserInventoryWeapons(source))
 end
 
-INV.addBullets = function(source, weaponId, type, qty)
-    VInv:addBullets(source, weaponId, type, qty)
+INV.addBullets = function(source, type, amount, cb)
+    return respond(cb, nil)
 end
 
-INV.subBullets = function(source, weaponId, type, qty)
+INV.subBullets = function(source, type, amount, cb)
+    return respond(cb, nil)
 end
 
-INV.getWeaponBullets = function(source, weaponId)
-    local items = VInv:GetInventory(source)
-    if items then
-        for _, v in ipairs(items) do
-            if v.slot == weaponId then 
-                 return (v.metadata and v.metadata.ammo) or 0
-            end
-        end
-    end
-    return 0
+INV.getWeaponBullets = function(source, weaponId, cb)
+    return respond(cb, VInv:getWeaponBullets(source, weaponId))
 end
 
 INV.getWeaponComponents = function(source, weaponId)
     return {}
 end
 
-INV.getUserWeapons = function(source)
-     local items = VInv:GetInventory(source) or {}
-     local weapons = {}
-     for _, v in ipairs(items) do
-          if v.type == "item_weapon" or (v.name and string.find(string.upper(v.name), "WEAPON_")) then
-              table.insert(weapons, mapToVorpItem(v))
-          end
-     end
-     return weapons
+INV.getUserWeapons = function(source, cb)
+    return respond(cb, VInv:getUserInventoryWeapons(source))
 end
 
-INV.getUserWeapon = function(source, weaponId)
+INV.getUserWeapon = function(source, cb, weaponId)
     local items = VInv:GetInventory(source)
     if items then
          for _, v in ipairs(items) do
-             if v.slot == weaponId then 
-                 return mapToVorpItem(v)
-             end
+             if v.slot == weaponId then return respond(cb, v) end
          end
     end
-    return nil
+    return respond(cb, nil)
 end
 
-INV.removeAllUserAmmo = function(source)
+INV.removeAllUserAmmo = function(source, cb)
+    return respond(cb, nil)
 end
 
 -- * ITEMS * --
-INV.getItem = function(source, itemName, metadata)
-    -- VORP: getItem(source, itemName, metadata) -> returns single item with count
+INV.getItem = function(source, itemName, metadata, cb)
     local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
-    return mapToVorpItem(item)
+    item.count = tonumber(item.amount)
+    return respond(cb, item)
 end
 
-INV.getItemByMainId = function(source, mainid) 
-    -- mainid usually means slot in some contexts or DB ID. 
-    -- If passed as number, treat as slot
-    if type(mainid) == "number" then
-        local items = VInv:GetInventory(source)
-        for _, v in ipairs(items) do
-            if v.slot == mainid then return mapToVorpItem(v) end
-        end
-    end
-    return nil
+INV.getItemByMainId = function(source, mainid, cb) 
+    return respond(cb, nil)
 end
 
-INV.addItem = function(source, name, amount, metadata, cb, allow, degradation, percentage)
-    local success = VInv:AddItem(source, name, amount, metadata)
-    return respond(cb, success)
+INV.addItem = function(source, itemName, qty, metadata, cb)
+    return respond(cb, VInv:AddItem(source, itemName, qty, metadata))
 end
 
--- subItem(source, name, amount, metadata, cb, allow, percentage)
-INV.subItem = function(source, name, amount, metadata, cb, allow, percentage)
-    -- V-Inv RemoveItem(source, itemName, amount, type, invId, slot)
-    -- If metadata is provided, we must find the item first to get its slot
-    if metadata then
-         local item = VInv:getItemMatchingMetadata(source, name, metadata)
-         if item then
-             local success = VInv:RemoveItem(source, name, amount, nil, nil, item.slot)
-             return respond(cb, success)
-         else
-             return respond(cb, false)
-         end
-    else
-         local success = VInv:RemoveItem(source, name, amount)
-         return respond(cb, success)
-    end
+INV.subItem = function(source, itemName, qty, metadata, cb)
+    return respond(cb, VInv:RemoveItem(source, itemName, qty))
 end
 
 INV.setItemMetadata = function(source, itemId, metadata, amount, cb)
-    local success = VInv:SetItemMetadata(source, itemId, metadata)
-    return respond(cb, success)
+    return respond(cb, VInv:SetItemMetadata(source, itemId, metadata))
 end
 
-INV.subItemID = function(source, id, cb, allow, amount)
-    -- id is slot
-    local success = VInv:RemoveItem(source, nil, amount or 1, nil, nil, id)
-    return respond(cb, success)
+INV.subItemID = function(source, id, cb)
+    return respond(cb, VInv:RemoveItem(source, nil, 1, nil, nil, id))
 end
 
 INV.getItemByName = function(source, itemName, cb)
      local items = VInv:GetInventory(source)
      if items then
          for _, v in ipairs(items) do
-             if v.name == itemName then 
-                 return respond(cb, mapToVorpItem(v))
-             end
+             if v.name == itemName then return respond(cb, v) end
          end
      end
      return respond(cb, nil)
 end
 
 INV.getItemContainingMetadata = function(source, itemName, metadata, cb)
-    local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
-    return respond(cb, mapToVorpItem(item))
+    return respond(cb, VInv:getItemMatchingMetadata(source, itemName, metadata))
 end
 
 INV.getItemMatchingMetadata = function(source, itemName, metadata, cb)
-    local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
-    return respond(cb, mapToVorpItem(item))
+    return respond(cb, VInv:getItemMatchingMetadata(source, itemName, metadata))
 end
 
--- getItemCount(source, cb, itemName, metadata, percentage)
-INV.getItemCount = function(source, cb, itemName, metadata, percentage)
-    if not source then return respond(cb, 0) end
-    
+INV.getItemCount = function(source, cb, itemName, metadata)
     if metadata then
-        local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
-        if item then 
-            return respond(cb, item.amount or 0)
-        else
-            return respond(cb, 0)
-        end
+        local count = VInv:getItemMatchingMetadata(source, itemName, metadata)
+        return respond(cb, count)
     else
-        local count = VInv:GetItemCount(source, itemName)
+        local count = VInv:getItemCount(source, itemName)
         return respond(cb, count)
     end
 end
 
-INV.canCarryItems = function(source, amount, cb)
-    -- This function in VORP checks "can carry amount items" - meaning total weight usually?
-    -- inventoryApiService.lua:89 -> totalAmount + totalAmountWeapons <= character.invCapacity
-    -- VInv doesn't expose generic "can carry X more items check" easily without loop.
-    -- Assuming true effectively unless we implement weight check against max.
-    -- V-Inv checks per item. 
-    return respond(cb, true) 
+INV.canCarryItems = function(source, amount)
+    return true 
 end
 
-INV.canCarryItem = function(target, itemName, amount, cb)
-    local can = VInv:canCarryItem(target, itemName, amount)
+INV.canCarryItem = function(source, item, amount, cb)
+    local can = VInv:canCarryItem(source, item, amount)
     return respond(cb, can)
 end
 
 INV.RegisterUsableItem = function(itemName, cb)
-    if GetResourceState('vorp_core') == 'started' then
-        TriggerEvent("vorpCore:registerUsableItem", itemName, cb)
-    end
+    VInv:registerUsableItem(itemName, cb)
 end
 
-INV.unRegisterUsableItem = function(name)
-    -- No-op
-end
-
-INV.getUserInventory = function(source, cb)
-    local items = VInv:GetInventory(source) or {}
-    local vorpItems = {}
-    for _, v in ipairs(items) do
-        table.insert(vorpItems, mapToVorpItem(v))
-    end
-    return respond(cb, vorpItems)
+INV.getUserInventory = function(source)
+    return VInv:GetInventory(source)
 end
 
 INV.CloseInv = function(source, invId)
@@ -309,25 +201,11 @@ end
 INV.OpenInv = function(source, invId)
 end
 
-INV.isCustomInventoryRegistered = function(id, cb)
-    return respond(cb, false)
+INV.isCustomInventoryRegistered = function()
 end
-
 INV.getItemDB = function(name, cb)
     local defs = VInv:GetItemDefinitions()
-    local d = defs and defs[name]
-    if d then
-        local item = {
-            item = name,
-            label = d.label,
-            limit = d.limit or 100,
-            can_remove = d.can_remove,
-            type = d.type,
-            usable = true -- Assume true
-        }
-        return respond(cb, item)
-    end
-    return respond(cb, nil)
+    return respond(cb, defs and defs[name])
 end
 
 -- Export the API object
@@ -335,7 +213,70 @@ exports('vorp_inventoryApi', function()
     return INV
 end)
 
+exports('isCustomInventoryRegistered', function(id, cb)
+    return exports["v-inventory"]:isCustomInventoryRegistered(id, cb)
+end)
+
+exports('getCustomInventoryData', function(id, cb)
+    return exports["v-inventory"]:getCustomInventoryData(id, cb)
+end)
+
+exports('updateCustomInvData', function(data, cb)
+    return exports["v-inventory"]:updateCustomInvData(data, cb)
+end)
+
+exports('openPlayerInventory', function(data)
+    return exports["v-inventory"]:openPlayerInventory(data)
+end)
+
+exports('addItemsToCustomInventory', function(invId, items, charId, cb)
+    return exports["v-inventory"]:addItemsToCustomInventory(invId, items, charId, cb)
+end)
+
+exports('addWeaponsToCustomInventory', function(invId, weapons, charId, cb)
+    return exports["v-inventory"]:addWeaponsToCustomInventory(invId, weapons, charId, cb)
+end)
+
+exports('getCustomInventoryItemCount', function(invId, itemName, itemCraftedId, cb)
+    return exports["v-inventory"]:getCustomInventoryItemCount(invId, itemName, itemCraftedId, cb)
+end)
+
+exports('getCustomInventoryWeaponCount', function(invId, weaponName, cb)
+    return exports["v-inventory"]:getCustomInventoryWeaponCount(invId, weaponName, cb)
+end)
+
+exports('removeItemFromCustomInventory', function(invId, itemName, amount, itemCraftedId, cb)
+    return exports["v-inventory"]:removeItemFromCustomInventory(invId, itemName, amount, itemCraftedId, cb)
+end)
+
+exports('getCustomInventoryItems', function(invId, cb)
+    return exports["v-inventory"]:getCustomInventoryItems(invId, cb)
+end)
+
+exports('getCustomInventoryWeapons', function(invId, cb)
+    return exports["v-inventory"]:getCustomInventoryWeapons(invId, cb)
+end)
+
+exports('updateCustomInventoryItem', function(invId, item_id, metadata, amount, cb)
+    return exports["v-inventory"]:updateCustomInventoryItem(invId, item_id, metadata, amount, cb)
+end)
+
+exports('removeCustomInventoryWeaponById', function(invId, weapon_id, cb)
+    return exports["v-inventory"]:removeCustomInventoryWeaponById(invId, weapon_id, cb)
+end)
+
+exports('removeWeaponFromCustomInventory', function(invId, weaponName, cb)
+    return exports["v-inventory"]:removeWeaponFromCustomInventory(invId, weaponName, cb)
+end)
+
+exports('deleteCustomInventory', function(invId, cb)
+    return exports["v-inventory"]:deleteCustomInventory(invId, cb)
+end)
+
+
 -- Direct exports for individual functions
+-- NOTE: Some of these may override bridge_server.lua exports depending on load order and name collisions.
+-- However, since vorp_compat.lua is loaded LAST, these will take precedence if names match.
 exports("isCustomInventoryRegistered", INV.isCustomInventoryRegistered)
 exports("registerInventory", INV.registerInventory)
 exports("removeInventory", INV.removeInventory)
@@ -363,7 +304,6 @@ exports("removeAllUserAmmo", INV.removeAllUserAmmo)
 exports("getItem", INV.getItem)
 exports("getItemDB", INV.getItemDB)
 exports("getItemByMainId", INV.getItemByMainId)
-exports("getItemById", INV.getItemByMainId) -- Alias
 exports("addItem", INV.addItem)
 exports("subItem", INV.subItem)
 exports("setItemMetadata", INV.setItemMetadata)
@@ -377,7 +317,6 @@ exports("canCarryItems", INV.canCarryItems)
 exports("canCarryItem", INV.canCarryItem)
 exports("RegisterUsableItem", INV.RegisterUsableItem)
 exports("registerUsableItem", INV.RegisterUsableItem)
-exports("unRegisterUsableItem", INV.unRegisterUsableItem)
 exports("getUserInventory", INV.getUserInventory)
 exports("CloseInv", INV.CloseInv)
 exports("OpenInv", INV.OpenInv)
