@@ -1,10 +1,55 @@
 local VInv = exports["v-inventory"]
 local INV = {}
 
-INV.registerInventory = function(...)
-     print("^3[v-inventory] Ignored registerInventory (legacy compatibility)^7")
+-- Store registered custom inventories
+local RegisteredInventories = {}
+
+INV.registerInventory = function(idOrData, name, limit, acceptWeapons, shared, ignoreItemStackLimit, whitelistItems, UsePermissions, UseBlackList, whitelistWeapons)
+    if not idOrData then return end
+
+    local invId, invName, invLimit
+    local data = {}
+
+    -- Handle both table and individual parameters
+    if type(idOrData) == "table" then
+        -- Table format: registerInventory({id = "x", name = "y", limit = 100, ...})
+        data = idOrData
+        invId = data.id or data.name
+        invName = data.name or data.id
+        invLimit = data.limit or 100
+    else
+        -- Individual parameters format: registerInventory(id, name, limit, ...)
+        invId = idOrData
+        invName = name or idOrData
+        invLimit = limit or 100
+        data = {
+            id = invId,
+            name = invName,
+            limit = invLimit,
+            acceptWeapons = acceptWeapons,
+            shared = shared,
+            ignoreItemStackLimit = ignoreItemStackLimit,
+            whitelistItems = whitelistItems,
+            UsePermissions = UsePermissions,
+            UseBlackList = UseBlackList,
+            whitelistWeapons = whitelistWeapons
+        }
+    end
+
+    if not invId then return end
+    RegisteredInventories[invId] = data
 end
-INV.removeInventory = function(...) end
+
+INV.removeInventory = function(idOrData)
+    local invId = idOrData
+    if type(idOrData) == "table" then
+        invId = idOrData.id or idOrData.name
+    end
+    if invId and RegisteredInventories[invId] then
+        RegisteredInventories[invId] = nil
+    end
+end
+
 INV.BlackListCustomAny = function(...) end
 INV.AddPermissionMoveToCustom = function(...) end
 INV.AddPermissionTakeFromCustom = function(...) end
@@ -12,9 +57,16 @@ INV.setInventoryItemLimit = function(...) end
 INV.setInventoryWeaponLimit = function(...) end
 INV.updateCustomInventorySlots = function(...) end
 
+-- Helper to get registered inventory config
+local function GetRegisteredInventory(id)
+    return RegisteredInventories[id]
+end
+
 local function respond(cb, result, message)
 	if message then print(message) end
-	if cb then cb(result) end
+	if cb and type(cb) == "function" then
+		cb(result)
+	end
 	return result
 end
 
@@ -125,7 +177,11 @@ end
 -- * ITEMS * --
 INV.getItem = function(source, itemName, metadata, cb)
     local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
-    item.count = tonumber(item.amount)
+    if item then
+        item.count = tonumber(item.amount) or 0
+    else
+        item = { count = 0, amount = 0 }
+    end
     return respond(cb, item)
 end
 
@@ -146,14 +202,17 @@ INV.setItemMetadata = function(source, itemId, metadata, amount, cb)
 end
 
 INV.subItemID = function(source, id, cb)
-    return respond(cb, VInv:RemoveItem(source, nil, 1, nil, nil, id))
+    return respond(cb, VInv:subItemById(source, id))
 end
 
 INV.getItemByName = function(source, itemName, cb)
      local items = VInv:GetInventory(source)
      if items then
          for _, v in ipairs(items) do
-             if v.name == itemName then return respond(cb, v) end
+             if v.name == itemName then
+                 v.count = tonumber(v.amount) or 0
+                 return respond(cb, v)
+             end
          end
      end
      return respond(cb, nil)
@@ -167,14 +226,50 @@ INV.getItemMatchingMetadata = function(source, itemName, metadata, cb)
     return respond(cb, VInv:getItemMatchingMetadata(source, itemName, metadata))
 end
 
-INV.getItemCount = function(source, cb, itemName, metadata)
-    if metadata then
-        local count = VInv:getItemMatchingMetadata(source, itemName, metadata)
-        return respond(cb, count)
+INV.getItemCount = function(source, itemNameOrCb, metadataOrItemName, cbOrMetadata)
+    -- Support multiple parameter orders for backwards compatibility:
+    -- Old VORP style: (source, cb, itemName, metadata)
+    -- v-invextra style: (source, nil, itemName)
+    -- New style: (source, itemName, metadata, cb) or (source, itemName, cb) or (source, itemName)
+
+    local actualItemName, actualMetadata, actualCb
+
+    if type(itemNameOrCb) == "function" then
+        -- Old style: (source, cb, itemName, metadata)
+        actualCb = itemNameOrCb
+        actualItemName = metadataOrItemName
+        actualMetadata = cbOrMetadata
+    elseif itemNameOrCb == nil and metadataOrItemName ~= nil then
+        -- Style: (source, nil, itemName) - v-invextra bridge format
+        actualItemName = metadataOrItemName
+        actualMetadata = nil
+        actualCb = cbOrMetadata
+    elseif type(metadataOrItemName) == "function" then
+        -- Style: (source, itemName, cb)
+        actualItemName = itemNameOrCb
+        actualCb = metadataOrItemName
+        actualMetadata = nil
+    elseif metadataOrItemName == nil and cbOrMetadata == nil then
+        -- Style: (source, itemName) - simple two parameter call
+        actualItemName = itemNameOrCb
+        actualMetadata = nil
+        actualCb = nil
     else
-        local count = VInv:getItemCount(source, itemName)
-        return respond(cb, count)
+        -- Style: (source, itemName, metadata, cb)
+        actualItemName = itemNameOrCb
+        actualMetadata = metadataOrItemName
+        actualCb = cbOrMetadata
     end
+
+    local count = 0
+    if actualMetadata then
+        local item = VInv:getItemMatchingMetadata(source, actualItemName, actualMetadata)
+        count = item and (tonumber(item.amount) or 0) or 0
+    else
+        -- v-inventory uses GetItemCount(source, itemName) format
+        count = VInv:GetItemCount(source, actualItemName) or 0
+    end
+    return respond(actualCb, count)
 end
 
 INV.canCarryItems = function(source, amount)
@@ -199,9 +294,32 @@ INV.CloseInv = function(source, invId)
 end
 
 INV.OpenInv = function(source, invId)
+    if not source or not invId then return end
+
+    -- Get registered inventory config if exists
+    local regInv = GetRegisteredInventory(invId)
+    local label = regInv and regInv.name or invId
+    local slots = regInv and regInv.limit or 100
+
+    -- Create container config for v-inventory
+    local container = {
+        type = "stash",
+        id = invId,
+        label = label,
+        capacity = 100000, -- Weight capacity
+        slots = slots,
+        stashType = "public"
+    }
+
+    -- Trigger v-inventory stash open
+    TriggerClientEvent('v-inventory:client:OpenStashInventory', source, container)
+    print("^2[vorp_inventory bridge] Opening inventory '" .. invId .. "' for player " .. source .. "^7")
 end
 
-INV.isCustomInventoryRegistered = function()
+INV.isCustomInventoryRegistered = function(id)
+    if RegisteredInventories[id] then return true end
+    -- Also check v-inventory's storage
+    return exports["v-inventory"]:isCustomInventoryRegistered(id)
 end
 INV.getItemDB = function(name, cb)
     local defs = VInv:GetItemDefinitions()
@@ -320,4 +438,5 @@ exports("registerUsableItem", INV.RegisterUsableItem)
 exports("getUserInventory", INV.getUserInventory)
 exports("CloseInv", INV.CloseInv)
 exports("OpenInv", INV.OpenInv)
+exports("openInventory", INV.OpenInv)
 exports("closeInventory", INV.CloseInv)
