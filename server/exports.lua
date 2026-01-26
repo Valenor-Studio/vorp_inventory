@@ -64,7 +64,7 @@ end
 
 local function respond(cb, result, message)
 	if message then print(message) end
-	if cb and type(cb) == "function" then
+	if cb and type(cb) == "function" or type(cb) == "table" then
 		cb(result)
 	end
 	return result
@@ -206,16 +206,16 @@ INV.subItemID = function(source, id, cb)
 end
 
 INV.getItemByName = function(source, itemName, cb)
-     local items = VInv:GetInventory(source)
-     if items then
-         for _, v in ipairs(items) do
-             if v.name == itemName then
-                 v.count = tonumber(v.amount) or 0
-                 return respond(cb, v)
-             end
-         end
-     end
-     return respond(cb, nil)
+    local items = VInv:GetInventory(source)
+    if items then
+        for k, v in ipairs(items) do
+            if v.name == itemName then   
+                v.count = tonumber(v.amount)        
+                return respond(cb, v)
+            end
+        end
+    end
+    return respond(cb, nil)
 end
 
 INV.getItemContainingMetadata = function(source, itemName, metadata, cb)
@@ -231,7 +231,6 @@ INV.getItemCount = function(source, itemNameOrCb, metadataOrItemName, cbOrMetada
     -- Old VORP style: (source, cb, itemName, metadata)
     -- v-invextra style: (source, nil, itemName)
     -- New style: (source, itemName, metadata, cb) or (source, itemName, cb) or (source, itemName)
-
     local actualItemName, actualMetadata, actualCb
 
     if type(itemNameOrCb) == "function" then
