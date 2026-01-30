@@ -317,8 +317,7 @@ end
 
 INV.isCustomInventoryRegistered = function(id)
     if RegisteredInventories[id] then return true end
-    -- Also check v-inventory's storage
-    return exports["v-inventory"]:isCustomInventoryRegistered(id)
+    return false
 end
 INV.getItemDB = function(name, cb)
     local defs = VInv:GetItemDefinitions()
