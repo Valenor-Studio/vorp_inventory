@@ -311,7 +311,7 @@ INV.OpenInv = function(source, invId)
     }
 
     -- Trigger v-inventory stash open
-    TriggerClientEvent('v-inventory:client:OpenStashInventory', source, container)
+    TriggerClientEvent('v-inventory:client:OpenInventory', source, container)
     print("^2[vorp_inventory bridge] Opening inventory '" .. invId .. "' for player " .. source .. "^7")
 end
 
