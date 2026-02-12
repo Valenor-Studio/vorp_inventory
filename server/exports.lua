@@ -64,7 +64,7 @@ end
 
 local function respond(cb, result, message)
 	if message then print(message) end
-	if cb and type(cb) == "function" or type(cb) == "table" then
+	if cb and type(cb) == "function" then
 		cb(result)
 	end
 	return result
