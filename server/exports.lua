@@ -52,12 +52,12 @@ INV.removeInventory = function(idOrData)
     end
 end
 
-INV.BlackListCustomAny = function(...) --print("BlackListCustomAny") end
-INV.AddPermissionMoveToCustom = function(...) --print("AddPermissionMoveToCustom") end
-INV.AddPermissionTakeFromCustom = function(...) --print("AddPermissionTakeFromCustom") end
-INV.setInventoryItemLimit = function(...) --print("setInventoryItemLimit") end
-INV.setInventoryWeaponLimit = function(...) --print("setInventoryWeaponLimit") end
-INV.updateCustomInventorySlots = function(...) --print("updateCustomInventorySlots") end
+INV.BlackListCustomAny = function(...) end
+INV.AddPermissionMoveToCustom = function(...) end
+INV.AddPermissionTakeFromCustom = function(...) end
+INV.setInventoryItemLimit = function(...) end
+INV.setInventoryWeaponLimit = function(...) end
+INV.updateCustomInventorySlots = function(...) end
 
 -- Helper to get registered inventory config
 local function GetRegisteredInventory(id)
@@ -70,6 +70,8 @@ local function respond(cb, result, message)
 	if message then print(message) end
 	if cb and type(cb) == "function" then
 		cb(result)
+    elseif cb and type(cb) == "table" then
+        cb(result)
 	end
 	return result
 end
@@ -303,11 +305,11 @@ end
 
 INV.canCarryItems = function(source, amount, cb)
     print("canCarryItems is DEPRECATED, use canCarryItem")
-    return respond(cb, true) 
+    return respond(cb, true)
 end
 
 INV.canCarryItem = function(source, item, amount, cb)
-    print("canCarryItem")
+    --print("canCarryItem")
     local can = VInv:canCarryItem(source, item, amount)
     return respond(cb, can)
 end
