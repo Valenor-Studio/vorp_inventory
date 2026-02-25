@@ -201,6 +201,9 @@ INV.getItem = function(source, itemName, metadata, cb)
     local item = VInv:getItemMatchingMetadata(source, itemName, metadata)
     if item then
         item.count = tonumber(item.amount) or 0
+		if not item.metadata then
+			item.metadata = {}
+		end
     else
         item = { count = 0, amount = 0 }
     end
