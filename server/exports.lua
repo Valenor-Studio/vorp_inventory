@@ -394,12 +394,12 @@ end)
 
 exports('isCustomInventoryRegistered', function(id, cb)
     --print("export:isCustomInventoryRegistered")
-    return exports["v-inventory"]:isCustomInventoryRegistered(id, cb)
+    return respond(cb, exports["v-inventory"]:isCustomInventoryRegistered(id))
 end)
 
 exports('getCustomInventoryData', function(id, cb)
     --print("export:getCustomInventoryData")
-    return exports["v-inventory"]:getCustomInventoryData(id, cb)
+    return respond(cb, exports["v-inventory"]:getCustomInventoryData(id))
 end)
 
 exports('updateCustomInvData', function(data, cb)
