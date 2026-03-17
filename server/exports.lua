@@ -52,6 +52,19 @@ INV.removeInventory = function(idOrData)
     end
 end
 
+INV.getDBItem = function(target, itemName)
+	local query = "SELECT * FROM items WHERE item= @item;"
+	local params = { item = itemName }
+	local itemDBTable = dbQuery(query, params)
+
+	if not itemDBTable[1] then
+		print('Item does not exist in Items table. Item:' .. itemName)
+		return nil
+	end
+
+	return itemDBTable[1]
+end
+
 INV.BlackListCustomAny = function(...) end
 INV.AddPermissionMoveToCustom = function(...) end
 INV.AddPermissionTakeFromCustom = function(...) end
