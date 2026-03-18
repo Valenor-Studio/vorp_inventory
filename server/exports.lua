@@ -55,7 +55,7 @@ end
 INV.getDBItem = function(target, itemName)
 	local query = "SELECT * FROM items WHERE item= @item;"
 	local params = { item = itemName }
-	local itemDBTable = dbQuery(query, params)
+	local itemDBTable = MySQL.query(query, params)
 
 	if not itemDBTable[1] then
 		print('Item does not exist in Items table. Item:' .. itemName)
