@@ -54,7 +54,7 @@ end
 
 INV.getDBItem = function(target, itemName)
     local defs = VInv:GetItemDefinitions()
-    return respond(cb, defs and defs[itemName])
+    return defs and defs[itemName]
 end
 
 INV.BlackListCustomAny = function(...) end
