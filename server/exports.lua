@@ -53,16 +53,8 @@ INV.removeInventory = function(idOrData)
 end
 
 INV.getDBItem = function(target, itemName)
-	local query = "SELECT * FROM items WHERE item= @item;"
-	local params = { item = itemName }
-	local itemDBTable = MySQL.query(query, params)
-
-	if not itemDBTable[1] then
-		print('Item does not exist in Items table. Item:' .. itemName)
-		return nil
-	end
-
-	return itemDBTable[1]
+    local defs = VInv:GetItemDefinitions()
+    return respond(cb, defs and defs[itemName])
 end
 
 INV.BlackListCustomAny = function(...) end
