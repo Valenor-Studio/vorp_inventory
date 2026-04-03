@@ -273,6 +273,18 @@ INV.getItemCount = function(source, itemNameOrCb, metadataOrItemName, cbOrMetada
 
     local actualItemName, actualMetadata, actualCb
 
+	if itemNameOrCb == false then
+		itemNameOrCb = nil
+	end
+
+	if metadataOrItemName == false then
+		itemNameOrCb = nil
+	end
+
+	if cbOrMetadata == false then
+		cbOrMetadata = nil
+	end
+
     if type(itemNameOrCb) == "function" then
         -- Old style: (source, cb, itemName, metadata)
         actualCb = itemNameOrCb
